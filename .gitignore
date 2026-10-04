@@ -2,6 +2,7 @@ AGENTS.md
 deploy.sh
 dist/
 tmp/
+backups/
 /babel
 babel.db*
 .env
