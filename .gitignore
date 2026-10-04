@@ -1,5 +1,15 @@
 AGENTS.md
+deploy.sh
 dist/
 tmp/
 /babel
-deploy.sh
+babel.db*
+.env
+.env.*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
