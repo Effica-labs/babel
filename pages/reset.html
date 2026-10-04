@@ -6,14 +6,12 @@
 <body>
     <h1>Reset password</h1>
     {{if .Error}}<p>{{.Error}}</p>{{end}}
-    {{if not .Error}}
     <form action="/reset" method="post">
         <input type="hidden" name="_csrf" value="{{.csrf}}">
         <input type="hidden" name="token" value="{{.Token}}">
         <input type="password" name="password" placeholder="New password" required>
         <button type="submit">Reset password</button>
     </form>
-    {{end}}
     <p><a href="/login">Back to login</a></p>
 </body>
 </html>
