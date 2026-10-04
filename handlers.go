@@ -1,8 +1,10 @@
 package main
 
 import (
+	"crypto/subtle"
 	"net/http"
 	"net/mail"
+	"net/url"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -84,9 +86,44 @@ func handleLogin(c echo.Context) error {
 	if confirmed == 0 {
 		return render(c, http.StatusUnauthorized, "login.html", echo.Map{"Error": "Please confirm your email address before logging in"})
 	}
+	code, err := newCode()
+	if err != nil {
+		return render(c, http.StatusInternalServerError, "login.html", echo.Map{"Error": "Could not send verification code"})
+	}
+	_, err = db.Exec(`UPDATE users SET twofa_code = ?, twofa_expires = ? WHERE id = ?`, code, time.Now().Add(10*time.Minute).Unix(), id)
+	if err != nil {
+		return render(c, http.StatusInternalServerError, "login.html", echo.Map{"Error": "Could not send verification code"})
+	}
+	body := "Your babel verification code is: " + code + "\n\nIt expires in 10 minutes.\n"
+	if err := sendEmail(email, "Your verification code", body); err != nil {
+		c.Logger().Error(err)
+		return render(c, http.StatusInternalServerError, "login.html", echo.Map{"Error": "Could not send verification email"})
+	}
+	return c.Redirect(http.StatusFound, "/verify?email="+url.QueryEscape(email))
+}
+
+func handleVerifyPage(c echo.Context) error {
+	email := c.QueryParam("email")
+	return render(c, http.StatusOK, "verify.html", echo.Map{"Email": email, "Error": ""})
+}
+
+func handleVerify(c echo.Context) error {
+	email := c.FormValue("email")
+	code := c.FormValue("code")
+	if email == "" || code == "" {
+		return render(c, http.StatusBadRequest, "verify.html", echo.Map{"Email": email, "Error": "Enter the code sent to your email"})
+	}
+	var id int64
+	var stored string
+	var exp int64
+	err := db.QueryRow(`SELECT id, twofa_code, twofa_expires FROM users WHERE email = ?`, email).Scan(&id, &stored, &exp)
+	if err != nil || stored == "" || time.Now().Unix() > exp || subtle.ConstantTimeCompare([]byte(stored), []byte(code)) != 1 {
+		return render(c, http.StatusUnauthorized, "verify.html", echo.Map{"Email": email, "Error": "Invalid or expired code"})
+	}
+	_, _ = db.Exec(`UPDATE users SET twofa_code = '', twofa_expires = 0 WHERE id = ?`, id)
 	token, err := newJWT(id, email)
 	if err != nil {
-		return render(c, http.StatusInternalServerError, "login.html", echo.Map{"Error": "Could not start session"})
+		return render(c, http.StatusInternalServerError, "verify.html", echo.Map{"Email": email, "Error": "Could not start session"})
 	}
 	setTokenCookie(c, token)
 	return c.Redirect(http.StatusFound, "/dashboard")

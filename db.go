@@ -39,6 +39,8 @@ func migrate(db *sql.DB) error {
 			confirm_token TEXT NOT NULL DEFAULT '',
 			reset_token TEXT NOT NULL DEFAULT '',
 			reset_expires INTEGER NOT NULL DEFAULT 0,
+			twofa_code TEXT NOT NULL DEFAULT '',
+			twofa_expires INTEGER NOT NULL DEFAULT 0,
 			created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
 		)`,
 		`CREATE TABLE IF NOT EXISTS revoked_tokens (
@@ -57,6 +59,8 @@ func migrate(db *sql.DB) error {
 		"confirm_token": "TEXT NOT NULL DEFAULT ''",
 		"reset_token":   "TEXT NOT NULL DEFAULT ''",
 		"reset_expires": "INTEGER NOT NULL DEFAULT 0",
+		"twofa_code":    "TEXT NOT NULL DEFAULT ''",
+		"twofa_expires": "INTEGER NOT NULL DEFAULT 0",
 	}
 	for col, def := range cols {
 		if err := ensureColumn(db, col, def); err != nil {

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verify</title>
+</head>
+<body>
+    <h1>Two-factor authentication</h1>
+    <p>Check your email for the verification code and enter it below.</p>
+    {{if .Error}}<p>{{.Error}}</p>{{end}}
+    <form action="/verify" method="post">
+        <input type="hidden" name="_csrf" value="{{.csrf}}">
+        <input type="hidden" name="email" value="{{.Email}}">
+        <input type="text" name="code" placeholder="Code" required>
+        <button type="submit">Verify</button>
+    </form>
+</body>
+</html>

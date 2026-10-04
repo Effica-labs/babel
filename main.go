@@ -151,11 +151,24 @@ func main() {
 		},
 	})
 
+	verifyLimiter := middleware.RateLimiterWithConfig(middleware.RateLimiterConfig{
+		Store: middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{
+			Rate:      rate.Limit(5.0 / 60.0),
+			Burst:     5,
+			ExpiresIn: 3 * time.Minute,
+		}),
+		DenyHandler: func(c echo.Context, identifier string, err error) error {
+			return render(c, http.StatusTooManyRequests, "verify.html", echo.Map{"Email": c.FormValue("email"), "Error": "Too many attempts, please try again later"})
+		},
+	})
+
 	e.GET("/confirm", handleConfirm)
 	e.GET("/forgot", handleForgotPage)
 	e.POST("/forgot", handleForgot, forgotLimiter)
 	e.GET("/reset", handleResetPage)
 	e.POST("/reset", handleReset)
+	e.GET("/verify", handleVerifyPage)
+	e.POST("/verify", handleVerify, verifyLimiter)
 	e.GET("/dashboard", handleDashboard, jwtMiddleware, requireNotRevoked)
 	e.POST("/change-password", handleChangePassword, jwtMiddleware, requireNotRevoked)
 
