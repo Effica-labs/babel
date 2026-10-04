@@ -51,15 +51,18 @@ func handleIndex(c echo.Context) error {
 
 func handleLoginPage(c echo.Context) error {
 	message := ""
-	switch c.QueryParam("registered") {
-	case "1":
+	q := c.QueryParams()
+	switch {
+	case q.Get("registered") == "1":
 		message = "Registration complete. Check your email to confirm your account."
-	}
-	switch c.QueryParam("confirmed") {
-	case "1":
+	case q.Get("confirmed") == "1":
 		message = "Email confirmed. You can now log in."
-	case "error":
+	case q.Get("confirmed") == "error":
 		message = "Invalid or expired confirmation link."
+	case q.Get("password") == "1":
+		message = "Password changed. Please log in again."
+	case q.Get("reset") == "1":
+		message = "Password reset. You can now log in."
 	}
 	return render(c, http.StatusOK, "login.html", echo.Map{"Error": "", "Message": message})
 }
@@ -141,6 +144,99 @@ func handleConfirm(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/login?confirmed=error")
 	}
 	return c.Redirect(http.StatusFound, "/login?confirmed=1")
+}
+
+func handleForgotPage(c echo.Context) error {
+	message := ""
+	if c.QueryParam("sent") == "1" {
+		message = "If an account exists for that email, a reset link has been sent."
+	}
+	return render(c, http.StatusOK, "forgot.html", echo.Map{"Message": message})
+}
+
+func handleForgot(c echo.Context) error {
+	email := c.FormValue("email")
+	var id int64
+	var confirmed int
+	err := db.QueryRow(`SELECT id, confirmed FROM users WHERE email = ?`, email).Scan(&id, &confirmed)
+	if err == nil && confirmed == 1 {
+		token, terr := newToken()
+		if terr == nil {
+			exp := time.Now().Add(1 * time.Hour).Unix()
+			_, _ = db.Exec(`UPDATE users SET reset_token = ?, reset_expires = ? WHERE id = ?`, token, exp, id)
+			link := appURL() + "/reset?token=" + token
+			body := "Reset your babel password by visiting:\n" + link + "\n\nIf you did not request this, ignore this email.\n"
+			_ = sendEmail(email, "Reset your password", body)
+		}
+	}
+	return c.Redirect(http.StatusFound, "/forgot?sent=1")
+}
+
+func handleResetPage(c echo.Context) error {
+	token := c.QueryParam("token")
+	errMsg := ""
+	if token == "" {
+		errMsg = "Invalid or expired reset link."
+	} else {
+		var one int
+		if err := db.QueryRow(`SELECT 1 FROM users WHERE reset_token = ? AND reset_expires > ?`, token, time.Now().Unix()).Scan(&one); err != nil {
+			errMsg = "Invalid or expired reset link."
+		}
+	}
+	return render(c, http.StatusOK, "reset.html", echo.Map{"Token": token, "Error": errMsg})
+}
+
+func handleReset(c echo.Context) error {
+	token := c.FormValue("token")
+	password := c.FormValue("password")
+	if token == "" {
+		return render(c, http.StatusBadRequest, "reset.html", echo.Map{"Token": token, "Error": "Invalid or expired reset link."})
+	}
+	if len(password) < 8 {
+		return render(c, http.StatusBadRequest, "reset.html", echo.Map{"Token": token, "Error": "Password must be at least 8 characters"})
+	}
+	hash, err := hashPassword(password)
+	if err != nil {
+		return render(c, http.StatusInternalServerError, "reset.html", echo.Map{"Token": token, "Error": "Could not reset password"})
+	}
+	res, err := db.Exec(`UPDATE users SET password_hash = ?, reset_token = '', reset_expires = 0 WHERE reset_token = ? AND reset_expires > ?`, hash, token, time.Now().Unix())
+	if err != nil {
+		return render(c, http.StatusInternalServerError, "reset.html", echo.Map{"Token": token, "Error": "Could not reset password"})
+	}
+	n, err := res.RowsAffected()
+	if err != nil || n == 0 {
+		return render(c, http.StatusBadRequest, "reset.html", echo.Map{"Token": token, "Error": "Invalid or expired reset link."})
+	}
+	return c.Redirect(http.StatusFound, "/login?reset=1")
+}
+
+func handleChangePassword(c echo.Context) error {
+	token := c.Get("user").(*jwt.Token)
+	cl := token.Claims.(*claims)
+	current := c.FormValue("current_password")
+	next := c.FormValue("new_password")
+	var hash string
+	err := db.QueryRow(`SELECT password_hash FROM users WHERE id = ?`, cl.UserID).Scan(&hash)
+	if err != nil || !checkPassword(hash, current) {
+		return render(c, http.StatusUnauthorized, "dashboard.html", echo.Map{"Email": cl.Email, "PasswordStatus": "Current password is incorrect"})
+	}
+	if len(next) < 8 {
+		return render(c, http.StatusBadRequest, "dashboard.html", echo.Map{"Email": cl.Email, "PasswordStatus": "New password must be at least 8 characters"})
+	}
+	newHash, err := hashPassword(next)
+	if err != nil {
+		return render(c, http.StatusInternalServerError, "dashboard.html", echo.Map{"Email": cl.Email, "PasswordStatus": "Could not change password"})
+	}
+	_, err = db.Exec(`UPDATE users SET password_hash = ? WHERE id = ?`, newHash, cl.UserID)
+	if err != nil {
+		return render(c, http.StatusInternalServerError, "dashboard.html", echo.Map{"Email": cl.Email, "PasswordStatus": "Could not change password"})
+	}
+	cookie, cerr := c.Cookie(tokenCookie)
+	if cerr == nil {
+		revokeJWT(cookie.Value)
+	}
+	clearTokenCookie(c)
+	return c.Redirect(http.StatusFound, "/login?password=1")
 }
 
 func requireNotRevoked(next echo.HandlerFunc) echo.HandlerFunc {

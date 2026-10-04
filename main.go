@@ -140,8 +140,24 @@ func main() {
 	e.GET("/register", handleRegisterPage)
 	e.POST("/register", handleRegister, registerLimiter)
 	e.POST("/logout", handleLogout)
+	forgotLimiter := middleware.RateLimiterWithConfig(middleware.RateLimiterConfig{
+		Store: middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{
+			Rate:      rate.Limit(5.0 / 60.0),
+			Burst:     5,
+			ExpiresIn: 3 * time.Minute,
+		}),
+		DenyHandler: func(c echo.Context, identifier string, err error) error {
+			return render(c, http.StatusTooManyRequests, "forgot.html", echo.Map{"Message": "Too many attempts, please try again later"})
+		},
+	})
+
 	e.GET("/confirm", handleConfirm)
+	e.GET("/forgot", handleForgotPage)
+	e.POST("/forgot", handleForgot, forgotLimiter)
+	e.GET("/reset", handleResetPage)
+	e.POST("/reset", handleReset)
 	e.GET("/dashboard", handleDashboard, jwtMiddleware, requireNotRevoked)
+	e.POST("/change-password", handleChangePassword, jwtMiddleware, requireNotRevoked)
 
 	go func() {
 		if err := e.Start("127.0.0.1:8080"); err != nil && err != http.ErrServerClosed {
