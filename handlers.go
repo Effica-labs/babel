@@ -50,7 +50,18 @@ func handleIndex(c echo.Context) error {
 }
 
 func handleLoginPage(c echo.Context) error {
-	return render(c, http.StatusOK, "login.html", echo.Map{"Error": ""})
+	message := ""
+	switch c.QueryParam("registered") {
+	case "1":
+		message = "Registration complete. Check your email to confirm your account."
+	}
+	switch c.QueryParam("confirmed") {
+	case "1":
+		message = "Email confirmed. You can now log in."
+	case "error":
+		message = "Invalid or expired confirmation link."
+	}
+	return render(c, http.StatusOK, "login.html", echo.Map{"Error": "", "Message": message})
 }
 
 func handleLogin(c echo.Context) error {
@@ -58,13 +69,17 @@ func handleLogin(c echo.Context) error {
 	password := c.FormValue("password")
 	var id int64
 	var hash string
-	err := db.QueryRow(`SELECT id, password_hash FROM users WHERE email = ?`, email).Scan(&id, &hash)
+	var confirmed int
+	err := db.QueryRow(`SELECT id, password_hash, confirmed FROM users WHERE email = ?`, email).Scan(&id, &hash, &confirmed)
 	if err != nil {
 		checkPassword(dummyHash, password)
 		return render(c, http.StatusUnauthorized, "login.html", echo.Map{"Error": "Invalid email or password"})
 	}
 	if !checkPassword(hash, password) {
 		return render(c, http.StatusUnauthorized, "login.html", echo.Map{"Error": "Invalid email or password"})
+	}
+	if confirmed == 0 {
+		return render(c, http.StatusUnauthorized, "login.html", echo.Map{"Error": "Please confirm your email address before logging in"})
 	}
 	token, err := newJWT(id, email)
 	if err != nil {
@@ -91,12 +106,41 @@ func handleRegister(c echo.Context) error {
 	if err != nil {
 		return render(c, http.StatusInternalServerError, "register.html", echo.Map{"Error": "Could not create account"})
 	}
-	_, err = db.Exec(`INSERT INTO users (email, password_hash) VALUES (?, ?)`, email, hash)
+	confirmToken, err := newToken()
+	if err != nil {
+		return render(c, http.StatusInternalServerError, "register.html", echo.Map{"Error": "Could not create account"})
+	}
+	res, err := db.Exec(`INSERT INTO users (email, password_hash, confirmed, confirm_token) VALUES (?, ?, 0, ?)`, email, hash, confirmToken)
 	if err != nil {
 		c.Logger().Error(err)
 		return render(c, http.StatusInternalServerError, "register.html", echo.Map{"Error": "Could not create account"})
 	}
-	return c.Redirect(http.StatusFound, "/login")
+	link := appURL() + "/confirm?token=" + confirmToken
+	body := "Welcome to babel.\n\nConfirm your email address by visiting:\n" + link + "\n\nIf you did not create this account, you can ignore this email.\n"
+	if err := sendEmail(email, "Confirm your email", body); err != nil {
+		c.Logger().Error(err)
+		if id, idErr := res.LastInsertId(); idErr == nil {
+			_, _ = db.Exec(`DELETE FROM users WHERE id = ?`, id)
+		}
+		return render(c, http.StatusInternalServerError, "register.html", echo.Map{"Error": "Could not send confirmation email"})
+	}
+	return c.Redirect(http.StatusFound, "/login?registered=1")
+}
+
+func handleConfirm(c echo.Context) error {
+	token := c.QueryParam("token")
+	if token == "" {
+		return c.Redirect(http.StatusFound, "/login?confirmed=error")
+	}
+	res, err := db.Exec(`UPDATE users SET confirmed = 1, confirm_token = '' WHERE confirm_token = ? AND confirmed = 0`, token)
+	if err != nil {
+		return c.Redirect(http.StatusFound, "/login?confirmed=error")
+	}
+	n, err := res.RowsAffected()
+	if err != nil || n == 0 {
+		return c.Redirect(http.StatusFound, "/login?confirmed=error")
+	}
+	return c.Redirect(http.StatusFound, "/login?confirmed=1")
 }
 
 func requireNotRevoked(next echo.HandlerFunc) echo.HandlerFunc {

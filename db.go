@@ -34,6 +34,9 @@ func migrate(db *sql.DB) error {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			email TEXT NOT NULL UNIQUE,
 			password_hash TEXT NOT NULL,
+			admin INTEGER NOT NULL DEFAULT 0,
+			confirmed INTEGER NOT NULL DEFAULT 0,
+			confirm_token TEXT NOT NULL DEFAULT '',
 			created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
 		)`,
 		`CREATE TABLE IF NOT EXISTS revoked_tokens (
@@ -46,5 +49,42 @@ func migrate(db *sql.DB) error {
 			return err
 		}
 	}
+	cols := map[string]string{
+		"admin":         "INTEGER NOT NULL DEFAULT 0",
+		"confirmed":     "INTEGER NOT NULL DEFAULT 1",
+		"confirm_token": "TEXT NOT NULL DEFAULT ''",
+	}
+	for col, def := range cols {
+		if err := ensureColumn(db, col, def); err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+func ensureColumn(db *sql.DB, column, definition string) error {
+	rows, err := db.Query(`PRAGMA table_info(users)`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid int
+		var name string
+		var ctype string
+		var notnull int
+		var dflt sql.NullString
+		var pk int
+		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
+			return err
+		}
+		if name == column {
+			return nil
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	_, err = db.Exec(`ALTER TABLE users ADD COLUMN ` + column + ` ` + definition)
+	return err
 }

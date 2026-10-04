@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -22,9 +23,9 @@ import (
 
 var db *sql.DB
 
-var cookieSecure = os.Getenv("BABEL_COOKIE_SECURE") == "true"
+var cookieSecure bool
 
-var jwtSecret = loadSecret()
+var jwtSecret []byte
 
 type renderer struct {
 	templates *template.Template
@@ -45,8 +46,33 @@ func loadSecret() []byte {
 	return b
 }
 
+func loadDotEnv(path string) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		key := strings.TrimSpace(parts[0])
+		val := strings.TrimSpace(parts[1])
+		if key != "" && os.Getenv(key) == "" {
+			os.Setenv(key, val)
+		}
+	}
+}
+
 func main() {
 	syscall.Umask(0o077)
+	loadDotEnv(".env")
+	cookieSecure = os.Getenv("BABEL_COOKIE_SECURE") == "true"
+	jwtSecret = loadSecret()
 
 	var err error
 	db, err = openDB()
@@ -97,13 +123,6 @@ func main() {
 		},
 	})
 
-	e.GET("/", handleIndex)
-	e.GET("/login", handleLoginPage)
-	e.POST("/login", handleLogin, loginLimiter)
-	e.GET("/register", handleRegisterPage)
-	e.POST("/register", handleRegister, registerLimiter)
-	e.POST("/logout", handleLogout)
-
 	jwtMiddleware := echojwt.WithConfig(echojwt.Config{
 		SigningKey:  jwtSecret,
 		TokenLookup: "cookie:token",
@@ -114,6 +133,14 @@ func main() {
 			return c.Redirect(http.StatusFound, "/login")
 		},
 	})
+
+	e.GET("/", handleIndex)
+	e.GET("/login", handleLoginPage)
+	e.POST("/login", handleLogin, loginLimiter)
+	e.GET("/register", handleRegisterPage)
+	e.POST("/register", handleRegister, registerLimiter)
+	e.POST("/logout", handleLogout)
+	e.GET("/confirm", handleConfirm)
 	e.GET("/dashboard", handleDashboard, jwtMiddleware, requireNotRevoked)
 
 	go func() {
