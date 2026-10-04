@@ -1,0 +1,5 @@
+AGENTS.md
+dist/
+tmp/
+/babel
+deploy.sh
