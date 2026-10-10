@@ -63,7 +63,7 @@ func (s *AuthService) RequestLogin(email string) error {
 		return fmt.Errorf("%w: %v", ErrInternal, err)
 	}
 
-	if err := s.store.SetMagicToken(user.ID, auth.HashToken(token), time.Now().Add(15*time.Minute).Unix()); err != nil {
+	if err := s.store.SetMagicToken(user.ID, auth.HashToken(token), time.Now().Add(5*time.Minute).Unix()); err != nil {
 		if created {
 			_ = s.store.DeleteUser(user.ID)
 		}
