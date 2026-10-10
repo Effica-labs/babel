@@ -4,7 +4,7 @@ tmp_dir = "tmp"
 [build]
 cmd = "go build -o ./tmp/main ./cmd/babel"
 entrypoint = ["./tmp/main"]
-include_ext = ["go", "html"]
+include_ext = ["go", "html", "css", "js"]
 exclude_dir = ["dist", "backups", "tmp", ".git"]
 delay = 1000
 stop_on_error = true

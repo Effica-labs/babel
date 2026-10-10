@@ -1,4 +1,8 @@
+* {
+  padding: 0;
+  margin: 0;
+}
 body {
-    background: #fffcf0;
-    color: #333;
+  background: #fffcf0;
+  color: #333;
 }
