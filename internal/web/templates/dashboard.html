@@ -1,10 +1,7 @@
-{{define "dashboard"}}
-{{template "header" .}}
-<h1>Dashboard</h1>
+{{define "dashboard"}} {{template "header" .}}
 <p>Welcome, {{.Email}}</p>
 <form action="/logout" method="post">
-    <input type="hidden" name="_csrf" value="{{.csrf}}">
-    <button type="submit">Logout</button>
+  <input type="hidden" name="_csrf" value="{{.csrf}}" />
+  <button type="submit">Logout</button>
 </form>
-{{template "footer" .}}
-{{end}}
+{{template "footer" .}} {{end}}
