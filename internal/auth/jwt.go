@@ -23,7 +23,7 @@ func NewJWT(secret []byte, userID int64, email string) (string, error) {
 		Email:  email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        jti,
-			ExpiresAt: jwt.NewNumericDate(now.Add(7 * 24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(now.Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(now),
 		},
 	}

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+</head>
+<body>
+    <h1>Login</h1>
+    <p>Continue to your dashboard.</p>
+    <form action="/magic" method="post">
+        <input type="hidden" name="_csrf" value="{{.csrf}}">
+        <input type="hidden" name="token" value="{{.Token}}">
+        <button type="submit">Continue</button>
+    </form>
+</body>
+</html>

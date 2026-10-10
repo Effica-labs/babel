@@ -30,7 +30,8 @@ func (h *Handler) Register(e *echo.Echo) {
 	e.GET("/dashboard", h.handleDashboardRedirect, authMW)
 	e.GET("/login", h.handleLoginPage)
 	e.POST("/login", h.handleLogin, middleware.LoginLimiter())
-	e.GET("/magic", h.handleMagic)
+	e.GET("/magic", h.handleMagicPage)
+	e.POST("/magic", h.handleMagic)
 	e.GET("/register", h.handleRegisterRedirect)
 	e.POST("/logout", h.handleLogout)
 }
@@ -43,7 +44,7 @@ func (h *Handler) setTokenCookie(c echo.Context, token string) {
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 		Secure:   h.cookieSecure,
-		Expires:  time.Now().Add(7 * 24 * time.Hour),
+		Expires:  time.Now().Add(24 * time.Hour),
 	}
 	c.SetCookie(cookie)
 }

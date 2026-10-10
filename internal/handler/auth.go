@@ -37,8 +37,16 @@ func (h *Handler) handleLogin(c echo.Context) error {
 	return c.Redirect(http.StatusFound, "/login?sent=1")
 }
 
-func (h *Handler) handleMagic(c echo.Context) error {
+func (h *Handler) handleMagicPage(c echo.Context) error {
 	token := c.QueryParam("token")
+	if token == "" {
+		return c.Redirect(http.StatusFound, "/login?error=1")
+	}
+	return web.Render(c, http.StatusOK, "magic.html", echo.Map{"Token": token})
+}
+
+func (h *Handler) handleMagic(c echo.Context) error {
+	token := c.FormValue("token")
 	jwt, err := h.svc.LoginWithMagicToken(token)
 	if err != nil {
 		c.Logger().Error(err)

@@ -81,6 +81,18 @@ func (s *SQLiteStore) SetMagicToken(id int64, tokenHash string, expires int64) e
 	return err
 }
 
+func (s *SQLiteStore) HasActiveMagicToken(id int64, now int64) (bool, error) {
+	var one int
+	err := s.db.QueryRow(`SELECT 1 FROM users WHERE id = ? AND magic_expires > ?`, id, now).Scan(&one)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 func (s *SQLiteStore) ConsumeMagicToken(tokenHash string, now int64) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(`UPDATE users SET confirmed = 1, magic_token = '', magic_expires = 0 WHERE magic_token = ? AND magic_expires > ? RETURNING id`, tokenHash, now).Scan(&id)

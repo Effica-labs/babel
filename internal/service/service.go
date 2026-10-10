@@ -55,6 +55,16 @@ func (s *AuthService) RequestLogin(email string) error {
 		return fmt.Errorf("%w: %v", ErrInternal, err)
 	}
 
+	if !created {
+		active, aerr := s.store.HasActiveMagicToken(user.ID, time.Now().Unix())
+		if aerr != nil {
+			return fmt.Errorf("%w: %v", ErrInternal, aerr)
+		}
+		if active {
+			return nil
+		}
+	}
+
 	token, err := auth.NewToken()
 	if err != nil {
 		if created {

@@ -19,6 +19,7 @@ type Store interface {
 	CreateUser(email string) (int64, error)
 	DeleteUser(id int64) error
 	SetMagicToken(id int64, tokenHash string, expires int64) error
+	HasActiveMagicToken(id int64, now int64) (bool, error)
 	ConsumeMagicToken(tokenHash string, now int64) (int64, error)
 	TokenRevoked(jti string, now int64) (bool, error)
 	RevokeToken(jti string, expires int64) error

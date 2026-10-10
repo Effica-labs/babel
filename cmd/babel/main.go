@@ -36,7 +36,12 @@ func main() {
 
 	e := echo.New()
 	e.IPExtractor = echo.ExtractIPFromXFFHeader(echo.TrustLinkLocal(false), echo.TrustPrivateNet(false))
-	e.Use(middleware.Logger())
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: `{"time":"${time_rfc3339_nano}","id":"${id}","remote_ip":"${remote_ip}",` +
+			`"host":"${host}","method":"${method}","path":"${path}","user_agent":"${user_agent}",` +
+			`"status":${status},"error":"${error}","latency":${latency},"latency_human":"${latency_human}"` +
+			`,"bytes_in":${bytes_in},"bytes_out":${bytes_out}}` + "\n",
+	}))
 	e.Use(middleware.Recover())
 	e.Use(middleware.SecureWithConfig(middleware.SecureConfig{
 		ContentTypeNosniff:    "nosniff",
