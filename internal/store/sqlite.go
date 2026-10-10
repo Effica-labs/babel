@@ -129,7 +129,6 @@ func ensureSchema(db *sql.DB) error {
 			jti TEXT PRIMARY KEY,
 			expires_at INTEGER NOT NULL
 		)`,
-		`CREATE INDEX IF NOT EXISTS idx_users_magic_token ON users(magic_token)`,
 	}
 	for _, stmt := range stmts {
 		if _, err := db.Exec(stmt); err != nil {
@@ -146,6 +145,9 @@ func ensureSchema(db *sql.DB) error {
 		if err := ensureColumn(db, col, def); err != nil {
 			return err
 		}
+	}
+	if _, err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_users_magic_token ON users(magic_token)`); err != nil {
+		return err
 	}
 	return nil
 }
