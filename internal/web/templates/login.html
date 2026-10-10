@@ -1,23 +1,15 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Login</title>
-    <link rel="stylesheet" href="/static/styles.css">
+{{define "login"}}
+{{template "header" .}}
+<h1>Login</h1>
+{{if .Error}}<p>{{.Error}}</p>{{end}}
+{{if .Message}}<p>{{.Message}}</p>{{end}}
+<form action="/login" method="post">
+    <input type="hidden" name="_csrf" value="{{.csrf}}">
+    <input type="email" name="email" placeholder="Email" required>
     {{if .SiteKey}}
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <div class="cf-turnstile" data-sitekey="{{.SiteKey}}"></div>
     {{end}}
-</head>
-<body>
-    <h1>Login</h1>
-    {{if .Error}}<p>{{.Error}}</p>{{end}}
-    {{if .Message}}<p>{{.Message}}</p>{{end}}
-    <form action="/login" method="post">
-        <input type="hidden" name="_csrf" value="{{.csrf}}">
-        <input type="email" name="email" placeholder="Email" required>
-        {{if .SiteKey}}
-        <div class="cf-turnstile" data-sitekey="{{.SiteKey}}"></div>
-        {{end}}
-        <button type="submit">Send login link</button>
-    </form>
-</body>
-</html>
+    <button type="submit">Send login link</button>
+</form>
+{{template "footer" .}}
+{{end}}

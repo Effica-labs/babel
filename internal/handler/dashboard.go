@@ -17,7 +17,7 @@ func (h *Handler) handleDashboardRedirect(c echo.Context) error {
 func (h *Handler) handleDashboard(c echo.Context) error {
 	token := c.Get("user").(*jwt.Token)
 	cl := token.Claims.(*auth.Claims)
-	return web.Render(c, http.StatusOK, "dashboard.html", echo.Map{"Email": cl.Email})
+	return web.Render(c, http.StatusOK, "dashboard", echo.Map{"Title": "Dashboard", "Email": cl.Email})
 }
 
 func (h *Handler) handleLogout(c echo.Context) error {

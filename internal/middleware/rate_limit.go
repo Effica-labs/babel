@@ -19,7 +19,7 @@ func LoginLimiter(siteKey string) echo.MiddlewareFunc {
 			ExpiresIn: 3 * time.Minute,
 		}),
 		DenyHandler: func(c echo.Context, identifier string, err error) error {
-			return web.Render(c, http.StatusTooManyRequests, "login.html", echo.Map{"Error": "Too many attempts, please try again later", "SiteKey": siteKey})
+			return web.Render(c, http.StatusTooManyRequests, "login", echo.Map{"Title": "Login", "Error": "Too many attempts, please try again later", "SiteKey": siteKey})
 		},
 	})
 }

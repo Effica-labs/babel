@@ -1,17 +1,12 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Login</title>
-    <link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
-    <h1>Login</h1>
-    <p>Continue to your dashboard.</p>
-    <form id="magic-form" action="/magic" method="post">
-        <input type="hidden" name="_csrf" value="{{.csrf}}">
-        <input type="hidden" name="token" value="{{.Token}}">
-        <noscript><button type="submit">Continue</button></noscript>
-    </form>
-    <script src="/static/magic.js"></script>
-</body>
-</html>
+{{define "magic"}}
+{{template "header" .}}
+<h1>Login</h1>
+<p>Continue to your dashboard.</p>
+<form id="magic-form" action="/magic" method="post">
+    <input type="hidden" name="_csrf" value="{{.csrf}}">
+    <input type="hidden" name="token" value="{{.Token}}">
+    <noscript><button type="submit">Continue</button></noscript>
+</form>
+<script src="/static/magic.js"></script>
+{{template "footer" .}}
+{{end}}

@@ -18,7 +18,7 @@ func (h *Handler) handleLoginPage(c echo.Context) error {
 	case c.QueryParam("error") == "1":
 		message = "Invalid or expired login link."
 	}
-	return web.Render(c, http.StatusOK, "login.html", echo.Map{"Error": "", "Message": message, "SiteKey": h.turnstileSiteKey})
+	return web.Render(c, http.StatusOK, "login", echo.Map{"Title": "Login", "Error": "", "Message": message, "SiteKey": h.turnstileSiteKey})
 }
 
 func (h *Handler) handleLogin(c echo.Context) error {
@@ -30,20 +30,20 @@ func (h *Handler) handleLogin(c echo.Context) error {
 			c.Logger().Error(err)
 		}
 		if err != nil || !ok {
-			return web.Render(c, http.StatusBadRequest, "login.html", echo.Map{"Error": "Captcha verification failed. Please try again.", "SiteKey": h.turnstileSiteKey})
+			return web.Render(c, http.StatusBadRequest, "login", echo.Map{"Title": "Login", "Error": "Captcha verification failed. Please try again.", "SiteKey": h.turnstileSiteKey})
 		}
 	}
 
 	err := h.svc.RequestLogin(email)
 	switch {
 	case errors.Is(err, service.ErrInvalidEmail):
-		return web.Render(c, http.StatusBadRequest, "login.html", echo.Map{"Error": "Invalid email address", "SiteKey": h.turnstileSiteKey})
+		return web.Render(c, http.StatusBadRequest, "login", echo.Map{"Title": "Login", "Error": "Invalid email address", "SiteKey": h.turnstileSiteKey})
 	case errors.Is(err, service.ErrSendEmail):
 		c.Logger().Error(err)
-		return web.Render(c, http.StatusInternalServerError, "login.html", echo.Map{"Error": "Could not send login email", "SiteKey": h.turnstileSiteKey})
+		return web.Render(c, http.StatusInternalServerError, "login", echo.Map{"Title": "Login", "Error": "Could not send login email", "SiteKey": h.turnstileSiteKey})
 	case err != nil:
 		c.Logger().Error(err)
-		return web.Render(c, http.StatusInternalServerError, "login.html", echo.Map{"Error": "Could not send login email", "SiteKey": h.turnstileSiteKey})
+		return web.Render(c, http.StatusInternalServerError, "login", echo.Map{"Title": "Login", "Error": "Could not send login email", "SiteKey": h.turnstileSiteKey})
 	}
 	return c.Redirect(http.StatusFound, "/login?sent=1")
 }
@@ -53,7 +53,7 @@ func (h *Handler) handleMagicPage(c echo.Context) error {
 	if token == "" {
 		return c.Redirect(http.StatusFound, "/login?error=1")
 	}
-	return web.Render(c, http.StatusOK, "magic.html", echo.Map{"Token": token})
+	return web.Render(c, http.StatusOK, "magic", echo.Map{"Title": "Login", "Token": token})
 }
 
 func (h *Handler) handleMagic(c echo.Context) error {
