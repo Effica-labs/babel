@@ -10,12 +10,14 @@ import (
 )
 
 type Config struct {
-	Addr         string
-	DBPath       string
-	CookieSecure bool
-	JWTSecret    []byte
-	AppURL       string
-	SMTP         mailer.Config
+	Addr             string
+	DBPath           string
+	CookieSecure     bool
+	JWTSecret        []byte
+	AppURL           string
+	SMTP             mailer.Config
+	TurnstileSiteKey string
+	TurnstileSecret  string
 }
 
 func Load() Config {
@@ -45,6 +47,8 @@ func Load() Config {
 			UseSSL:   strings.EqualFold(os.Getenv("SMTP_USE_SSL"), "true"),
 			UseTLS:   strings.EqualFold(os.Getenv("SMTP_USE_TLS"), "true"),
 		},
+		TurnstileSiteKey: os.Getenv("TURNSTILE_SITE_KEY"),
+		TurnstileSecret:  os.Getenv("TURNSTILE_SITE_SECRET"),
 	}
 }
 

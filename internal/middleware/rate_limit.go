@@ -11,7 +11,7 @@ import (
 	"babel/internal/web"
 )
 
-func LoginLimiter() echo.MiddlewareFunc {
+func LoginLimiter(siteKey string) echo.MiddlewareFunc {
 	return echomw.RateLimiterWithConfig(echomw.RateLimiterConfig{
 		Store: echomw.NewRateLimiterMemoryStoreWithConfig(echomw.RateLimiterMemoryStoreConfig{
 			Rate:      rate.Limit(5.0 / 60.0),
@@ -19,7 +19,7 @@ func LoginLimiter() echo.MiddlewareFunc {
 			ExpiresIn: 3 * time.Minute,
 		}),
 		DenyHandler: func(c echo.Context, identifier string, err error) error {
-			return web.Render(c, http.StatusTooManyRequests, "login.html", echo.Map{"Error": "Too many attempts, please try again later"})
+			return web.Render(c, http.StatusTooManyRequests, "login.html", echo.Map{"Error": "Too many attempts, please try again later", "SiteKey": siteKey})
 		},
 	})
 }

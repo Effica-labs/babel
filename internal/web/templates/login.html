@@ -2,6 +2,9 @@
 <html>
 <head>
     <title>Login</title>
+    {{if .SiteKey}}
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    {{end}}
 </head>
 <body>
     <h1>Login</h1>
@@ -10,6 +13,9 @@
     <form action="/login" method="post">
         <input type="hidden" name="_csrf" value="{{.csrf}}">
         <input type="email" name="email" placeholder="Email" required>
+        {{if .SiteKey}}
+        <div class="cf-turnstile" data-sitekey="{{.SiteKey}}"></div>
+        {{end}}
         <button type="submit">Send login link</button>
     </form>
 </body>

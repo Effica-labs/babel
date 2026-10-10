@@ -17,6 +17,7 @@ import (
 	"babel/internal/mailer"
 	"babel/internal/service"
 	"babel/internal/store"
+	"babel/internal/turnstile"
 	"babel/internal/web"
 )
 
@@ -32,7 +33,8 @@ func main() {
 
 	mlr := mailer.NewSMTP(cfg.SMTP)
 	svc := service.New(st, mlr, cfg.JWTSecret, cfg.AppURL)
-	h := handler.New(svc, cfg.JWTSecret, st, cfg.CookieSecure)
+	ts := turnstile.New(cfg.TurnstileSecret)
+	h := handler.New(svc, cfg.JWTSecret, st, cfg.CookieSecure, ts, cfg.TurnstileSiteKey)
 
 	e := echo.New()
 	e.IPExtractor = echo.ExtractIPFromXFFHeader(echo.TrustLinkLocal(false), echo.TrustPrivateNet(false))
@@ -47,7 +49,7 @@ func main() {
 		ContentTypeNosniff:    "nosniff",
 		XFrameOptions:         "DENY",
 		ReferrerPolicy:        "same-origin",
-		ContentSecurityPolicy: "default-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+		ContentSecurityPolicy: "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
 	}))
 	e.Use(middleware.CSRFWithConfig(middleware.CSRFConfig{
 		TokenLookup:    "form:_csrf",
