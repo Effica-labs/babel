@@ -10,8 +10,8 @@ import (
 	"babel/internal/web"
 )
 
-func (h *Handler) handleIndex(c echo.Context) error {
-	return c.Redirect(http.StatusFound, "/dashboard")
+func (h *Handler) handleDashboardRedirect(c echo.Context) error {
+	return c.Redirect(http.StatusFound, "/")
 }
 
 func (h *Handler) handleDashboard(c echo.Context) error {

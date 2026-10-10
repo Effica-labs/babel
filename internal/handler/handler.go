@@ -26,13 +26,13 @@ func New(svc service.Service, secret []byte, revoked middleware.RevokedChecker, 
 func (h *Handler) Register(e *echo.Echo) {
 	authMW := middleware.JWTAuth(h.secret, h.revoked)
 
-	e.GET("/", h.handleIndex)
+	e.GET("/", h.handleDashboard, authMW)
+	e.GET("/dashboard", h.handleDashboardRedirect, authMW)
 	e.GET("/login", h.handleLoginPage)
 	e.POST("/login", h.handleLogin, middleware.LoginLimiter())
 	e.GET("/magic", h.handleMagic)
 	e.GET("/register", h.handleRegisterRedirect)
 	e.POST("/logout", h.handleLogout)
-	e.GET("/dashboard", h.handleDashboard, authMW)
 }
 
 func (h *Handler) setTokenCookie(c echo.Context, token string) {

@@ -45,7 +45,7 @@ func (h *Handler) handleMagic(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/login?error=1")
 	}
 	h.setTokenCookie(c, jwt)
-	return c.Redirect(http.StatusFound, "/dashboard")
+	return c.Redirect(http.StatusFound, "/")
 }
 
 func (h *Handler) handleRegisterRedirect(c echo.Context) error {
