@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: git deploy backup
+.PHONY: git test deploy backup
 
 git:
 	@read -r -p "Commit message: " msg; \
@@ -9,7 +9,10 @@ git:
 	git commit -m "$$msg" && \
 	(git push || git push --set-upstream origin HEAD)
 
-deploy:
+test:
+	@go test ./...
+
+deploy: test
 	@./deploy.sh
 
 backup:

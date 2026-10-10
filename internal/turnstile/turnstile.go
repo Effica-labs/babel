@@ -8,19 +8,21 @@ import (
 	"time"
 )
 
-const verifyURL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+const defaultVerifyURL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
 
 var ErrVerificationFailed = errors.New("turnstile: verification failed")
 
 type Verifier struct {
-	secret string
-	client *http.Client
+	secret    string
+	verifyURL string
+	client    *http.Client
 }
 
 func New(secret string) *Verifier {
 	return &Verifier{
-		secret: secret,
-		client: &http.Client{Timeout: 5 * time.Second},
+		secret:    secret,
+		verifyURL: defaultVerifyURL,
+		client:    &http.Client{Timeout: 5 * time.Second},
 	}
 }
 
@@ -49,7 +51,7 @@ func (v *Verifier) Verify(token, remoteIP string) (bool, error) {
 		form.Set("remoteip", remoteIP)
 	}
 
-	resp, err := v.client.PostForm(verifyURL, form)
+	resp, err := v.client.PostForm(v.verifyURL, form)
 	if err != nil {
 		return false, err
 	}
