@@ -4,6 +4,7 @@ import (
 	"embed"
 	"html/template"
 	"io"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -14,7 +15,9 @@ var templatesFS embed.FS
 //go:embed static/*
 var staticFS embed.FS
 
-var templates = template.Must(template.ParseFS(templatesFS, "templates/*.html"))
+var templates = template.Must(template.New("templates").Funcs(template.FuncMap{
+	"nowYear": func() int { return time.Now().Year() },
+}).ParseFS(templatesFS, "templates/*.html"))
 
 type Renderer struct{}
 

@@ -1,15 +1,23 @@
-{{define "login"}}
-{{template "header" .}}
-<h1>Login</h1>
-{{if .Error}}<p>{{.Error}}</p>{{end}}
-{{if .Message}}<p>{{.Message}}</p>{{end}}
-<form action="/login" method="post">
-    <input type="hidden" name="_csrf" value="{{.csrf}}">
-    <input type="email" name="email" placeholder="Email" required>
+{{define "login"}} {{template "header" .}}
+
+<section class="auth-flow">
+  {{if not .Sent}}
+  <h1>Login</h1>
+  {{end}}
+  {{if .Error}}
+  <p>{{.Error}}</p>
+  {{end}} {{if .Message}}
+  <p>{{.Message}}</p>
+  {{end}}
+  {{if not .Sent}}
+  <form action="/login" method="post">
+    <input type="hidden" name="_csrf" value="{{.csrf}}" />
+    <input type="email" name="email" placeholder="Email" required />
     {{if .SiteKey}}
-    <div class="cf-turnstile" data-sitekey="{{.SiteKey}}"></div>
+    <div class="cf-turnstile" data-sitekey="{{.SiteKey}}" data-size="flexible"></div>
     {{end}}
     <button type="submit">Send login link</button>
-</form>
-{{template "footer" .}}
-{{end}}
+  </form>
+  {{end}}
+</section>
+{{template "footer" .}} {{end}}

@@ -12,13 +12,18 @@ import (
 
 func (h *Handler) handleLoginPage(c echo.Context) error {
 	message := ""
+	sent := c.QueryParam("sent") == "1"
 	switch {
-	case c.QueryParam("sent") == "1":
-		message = "Check your email. We sent you a login link."
+	case sent:
+		message = "Please check your email. We sent you a login link."
 	case c.QueryParam("error") == "1":
 		message = "Invalid or expired login link."
 	}
-	return web.Render(c, http.StatusOK, "login", echo.Map{"Title": "Login", "Error": "", "Message": message, "SiteKey": h.turnstileSiteKey})
+	siteKey := h.turnstileSiteKey
+	if sent {
+		siteKey = ""
+	}
+	return web.Render(c, http.StatusOK, "login", echo.Map{"Title": "Login", "Error": "", "Message": message, "SiteKey": siteKey, "Sent": sent})
 }
 
 func (h *Handler) handleLogin(c echo.Context) error {
