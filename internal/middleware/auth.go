@@ -32,7 +32,11 @@ func JWTAuth(secret []byte, checker RevokedChecker) echo.MiddlewareFunc {
 			token := c.Get("user").(*jwt.Token)
 			cl := token.Claims.(*auth.Claims)
 			revoked, err := checker.TokenRevoked(cl.ID, time.Now().Unix())
-			if err == nil && revoked {
+			if err != nil {
+				c.Logger().Error(err)
+				return c.Redirect(http.StatusFound, "/login")
+			}
+			if revoked {
 				return c.Redirect(http.StatusFound, "/login")
 			}
 			return next(c)
