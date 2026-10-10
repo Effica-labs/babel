@@ -11,6 +11,9 @@ import (
 //go:embed templates/*.html
 var templatesFS embed.FS
 
+//go:embed static/*.js
+var staticFS embed.FS
+
 var templates = template.Must(template.ParseFS(templatesFS, "templates/*.html"))
 
 type Renderer struct{}
@@ -29,4 +32,8 @@ func Render(c echo.Context, code int, name string, data echo.Map) error {
 	}
 	data["csrf"] = c.Get("csrf")
 	return c.Render(code, name, data)
+}
+
+func RegisterStatic(e *echo.Echo) {
+	e.StaticFS("/static", echo.MustSubFS(staticFS, "static"))
 }

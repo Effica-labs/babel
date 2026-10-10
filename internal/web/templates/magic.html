@@ -6,10 +6,11 @@
 <body>
     <h1>Login</h1>
     <p>Continue to your dashboard.</p>
-    <form action="/magic" method="post">
+    <form id="magic-form" action="/magic" method="post">
         <input type="hidden" name="_csrf" value="{{.csrf}}">
         <input type="hidden" name="token" value="{{.Token}}">
-        <button type="submit">Continue</button>
+        <noscript><button type="submit">Continue</button></noscript>
     </form>
+    <script src="/static/magic.js"></script>
 </body>
 </html>

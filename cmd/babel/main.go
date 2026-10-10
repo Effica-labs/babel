@@ -61,6 +61,7 @@ func main() {
 		ContextKey:     "csrf",
 	}))
 	e.Renderer = web.NewRenderer()
+	web.RegisterStatic(e)
 
 	h.Register(e)
 
